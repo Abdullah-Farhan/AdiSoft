@@ -21,7 +21,7 @@ export class UserService {
         const resPerPage = 2;
         const currentPage = Number(query.page) || 1
         const skip = resPerPage * (currentPage - 1)
-
+        
         const keyword = query.keyword ? {
             name: {
                 $regex:query.keyword,

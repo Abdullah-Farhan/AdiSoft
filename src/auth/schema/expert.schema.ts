@@ -5,7 +5,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
     timestamps: true
 })
 
-export class User {
+export class Expert {
 
     @Prop({required:true, type:String})
     name: string
@@ -17,13 +17,20 @@ export class User {
     password: string
 
     @Prop({required:true, type:String})
-    type: string
+    phno: string
+
+    @Prop({required:true, type:String})
+    linkedIn: string
 
     @Prop({default:'Null', required:true, type:String})
-    otp: string
+    domain: string
+
+    @Prop({required:true, type:String})
+    type: string
+
 
     @Prop({default:false, required:true, type:String})
     verified: boolean
 }
 
-export const UserSchema = SchemaFactory.createForClass(User);
+export const ExpertSchema = SchemaFactory.createForClass(Expert);

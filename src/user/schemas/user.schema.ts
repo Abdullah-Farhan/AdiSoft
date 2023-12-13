@@ -7,16 +7,16 @@ import exp from "constants";
 
 export class User {
 
-    @Prop()
+    @Prop({required:true, type:String})
     name: string;
 
-    @Prop()
+    @Prop({required:true, type:String})
     email: string;
 
-    @Prop()
+    @Prop({required:true, type:String})
     password: string;
 
-    @Prop()
+    @Prop({required:true, type:String})
     type: string;
 }
 

@@ -5,6 +5,8 @@ import { LogInDto } from './dto/login.dto';
 import { VerifyOtpDto } from '../otp/dto/otp.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PasswordResetDTO } from 'src/otp/dto/password-reset.dto';
+import { InvestorDto } from './dto/investor.dto'
+import { ExpertDto } from './dto/expert.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -15,7 +17,7 @@ export class AuthController {
         return this.authService.signUp(signUpDto);
     }
 
-    @Get('/login')
+    @Post('/login')
     login(@Body() logInDto: LogInDto): Promise<{token: string}> {
         return this.authService.login(logInDto);
     }
@@ -32,6 +34,16 @@ export class AuthController {
         }
     }
 
+    @Post('/signup/investor')
+    signUpInvestor(@Body() signUpDto: InvestorDto): Promise<{token: string}> {
+        return this.authService.signUpInvestor(signUpDto);
+    }
+
+    @Post('/signup/expert')
+    signUpExpert(@Body() signUpDto: ExpertDto): Promise<{token: string}> {
+        return this.authService.signUpExpert(signUpDto);
+    }
+
     @Get()
     @UseGuards(AuthGuard('google'))
     async googleAuth(@Req() req) {
@@ -45,7 +57,7 @@ export class AuthController {
         return data;
     }
 
-    @Post('request')
+    @Post('/request')
     async requestPasswordReset(@Body() passwordDto: PasswordResetDTO) {
         return this.authService.requestPasswordReset(passwordDto);
     }

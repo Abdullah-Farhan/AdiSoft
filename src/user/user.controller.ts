@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, InternalServerErrorException, Param, Post, Put, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -16,11 +16,18 @@ export class UserController {
         @Query() query: ExpressQuery, 
         @Req() req
     ): Promise<User[]> {
-        console.log(req.user);
-        if (req.user.type !== "admin"){
-            throw new UnauthorizedException("You don't have access")
+        try {
+            console.log(req.user);
+            if (req.user.type !== "admin") {
+                throw new UnauthorizedException("You don't have access");
+            }
+            return this.userService.findAll(query);
+        } catch (error) {
+            console.log(error);
+            
+            console.error('Error in getAllUsers:', error.message);
+            throw new InternalServerErrorException('Something went wrong'); // You can customize the error response as needed
         }
-        return this.userService.findAll(query);
     }
 
     @Post('signup')
@@ -44,8 +51,11 @@ export class UserController {
         id: string,
         @Req() req
     ): Promise<User> {
-        if(req.user.type !== 'admin' || req.user.id !== id){
-            throw new UnauthorizedException("You don't have access.")
+        console.log(id);
+        if(req.user.type.trim() != "admin"){
+            if (req.user.id !== id){
+                throw new UnauthorizedException("You don't have access.")
+            }
         }
         return this.userService.findById(id);
     }
@@ -61,8 +71,10 @@ export class UserController {
         @Req() req
     ): Promise<User> {
         console.log(req.user);
-        if (req.user.type !== "admin" || req.user.id !== id){
-            throw new UnauthorizedException("You don't have access")
+        if (req.user.type.trim() !== "admin"){
+            if (req.user.id.trim() !== id){
+                throw new UnauthorizedException("You don't have access")
+            }
         }
         return this.userService.updateById(id, user);
     }
@@ -74,10 +86,13 @@ export class UserController {
         id: string,
         @Req() req
     ): Promise<User> {
-        console.log(req.user);
-        if (req.user.type !== "admin" || req.user.id !== id){
-            throw new UnauthorizedException("You don't have access")
+        console.log(req.user.id, id);
+        if (req.user.type.trim() !== "admin"){
+            if(req.user.id.trim() !== id){
+                throw new UnauthorizedException("You don't have access")
+            }
         }
+        
         return this.userService.deleteById(id);
     }
 }

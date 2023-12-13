@@ -11,6 +11,12 @@ import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer'
 import { PasswordResetDTO } from 'src/otp/dto/password-reset.dto';
 import { PasswordReset } from './schema/password-reset.schema';
+import { InvestorDto } from './dto/investor.dto';
+import { Investor } from './schema/investor.schema'
+import { ExpertDto } from './dto/expert.dto';
+import { Expert } from './schema/expert.schema';
+import exp from 'constants';
+import { use } from 'passport';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +25,10 @@ export class AuthService {
         private userModel: Model<User>,
         @InjectModel(PasswordReset.name)
         private passwordReset: Model<PasswordReset>,
+        @InjectModel(Investor.name)
+        private investorModel: Model<Investor>,
+        @InjectModel(Expert.name)
+        private expertModel: Model<Expert>,
         private jwtService: JwtService,
         private otpService: OtpService,
     ) {}
@@ -36,6 +46,48 @@ export class AuthService {
             password: hashedPassword,
             type,
             otp:otpCode,
+            verified,
+        })
+
+        const token = this.jwtService.sign({id: user._id})
+
+        return { token }
+    }
+
+    async signUpInvestor(signUpDto: InvestorDto): Promise<{ token: string}>{
+        const { name, email, password, phno, type, investings, details, verified } = signUpDto
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        const user = await this.investorModel.create({
+            name,
+            email,
+            password: hashedPassword,
+            phno,
+            type:"investor",
+            investings,
+            details,
+            verified,
+        })
+
+        const token = this.jwtService.sign({id: user._id})
+
+        return { token }
+    }
+
+    async signUpExpert(signUpDto: ExpertDto): Promise<{ token: string}>{
+        const { name, email, password, phno, linkedIn, domain, type, verified } = signUpDto
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        const user = await this.expertModel.create({
+            name,
+            email,
+            password: hashedPassword,
+            phno,
+            linkedIn,
+            domain,
+            type:"expert",
             verified,
         })
 
@@ -62,23 +114,56 @@ export class AuthService {
         const { email, password } = logInDto;
 
         const user = await this.userModel.findOne({email})
-        console.log(user);
-        
+        const investor = await this.investorModel.findOne({email})
+        const expert = await this.expertModel.findOne({email})
+        var token = '';
+
         if(!user) {
-            throw new UnauthorizedException("Invalid Email or Password")
+            if(!investor){
+                if(!expert){
+                    throw new UnauthorizedException("User does not Exist!")
+                }
+            }
         }
         //Validating Password
-        const isPasswordMatched = await bcrypt.compare(password, user.password)
-
-        if(!isPasswordMatched) {
-            throw new UnauthorizedException("Invalid Password")
+        if(user){
+            const isPasswordMatched = await bcrypt.compare(password, user.password)
+            if(!isPasswordMatched) {
+                throw new UnauthorizedException("Invalid Password")
+            }
+            if(!user.verified){
+                throw new UnauthorizedException("verify Your Email First")
+            }
+            token = this.jwtService.sign({id: user._id})
+            console.log(user);
+            
         }
 
-        if(!user.verified){
-            throw new UnauthorizedException("verify Your Email First")
+        else if(investor){
+            const isPasswordMatched = await bcrypt.compare(password, investor.password)
+            if(!isPasswordMatched) {
+                throw new UnauthorizedException("Invalid Password")
+            }
+            if(!investor.verified){
+                throw new UnauthorizedException("Wait for Your Account to be Verified!")
+            }
+            token = this.jwtService.sign({id: investor._id})
+            console.log(investor);
+            
         }
 
-        const token = this.jwtService.sign({id: user._id})
+        else if(expert){
+            const isPasswordMatched = await bcrypt.compare(password, expert.password)
+            if(!isPasswordMatched) {
+                throw new UnauthorizedException("Invalid Password")
+            }
+            if(!expert.verified){
+                throw new UnauthorizedException("Wait for Your Account to be Verified!")
+            }
+            token = this.jwtService.sign({id: expert._id})
+            console.log(expert);
+            
+        }
 
         return { token }
     }
