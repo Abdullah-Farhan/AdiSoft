@@ -3,8 +3,13 @@ import pandas as pd
 from xgboost import XGBRegressor
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
+import openai
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+
+openai.api_key = "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"
 
 # Endpoint to handle a POST request
 @app.route('/success-prediction', methods=['POST'])
@@ -28,7 +33,6 @@ def post_example():
     'has_roundC': [data['has_roundC']],
     'has_roundD': [data['has_roundD']],
     'avg_participants': [data['avg_participants']],
-    'is_top500': [data['is_top500']],
     'category_code_advertising': [data['category_code_advertising']],
     'category_code_analytics': [data['category_code_analytics']],
     'category_code_automotive': [data['category_code_automotive']],
@@ -76,6 +80,61 @@ def post_example():
 
     y_pred = xg_reg.predict(custom_data).tolist()
     return jsonify(message=y_pred)
+
+
+def api_call(description):
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        temperature = 0.4,
+        max_tokens=500,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=1,
+        messages= [
+            {"role": "system","content":'''You are an expert Entrepreneur with loads of experience in evaluating and judging startups of different domains. Evaluate the projects, maintain a strict judging criteria and assign them marks on basis of following judging and marking criteria. If total aggregate of marks is less than 70% out of 40, inform that project is not selected:
+            Problem Assessment (5 marks)
+            Explanation of problem
+            Is there a need for the product / market gap being filled?
+
+            Solution Viability (5 marks)
+            Explanation of solution
+            Innovative, efficient or cost effective?
+
+            Team (5 marks)
+            The chemistry between the co-founders (e.g. the time period they have worked together)
+            Skill set
+
+            USP (5 marks)
+            How novel is the product compared to competitor’s/alternatives in Pakistan 
+            Technology platform
+
+            Viability (5 marks)
+            Can the product survive in the market?
+            Competitive advantage
+
+            Financials (5 marks)
+            Does the team validly explain how they will generate revenue?
+            Can the team survive after the 6-month incubation period?
+
+            Market Size (5 marks)
+            Does the team show a good understanding of the target market?
+            What is the size of the market?
+
+        Business Model (5 marks)
+        Does the startup have a structured business model?
+        
+        Response: provide the response in json format with each heading as the key and remarks, marks obtained as the value. for example "problem statement":[remarks, marks]
+        '''},
+            {"role": "user", "content": description}
+        ]
+        )
+
+    return jsonify(completion['choices'][0]['message']['content'])
+
+@app.route('/idea-insight', methods=['POST'])
+def idea():
+    data = request.get_json()
+    return (api_call(data['description']))
 
 if __name__ == '__main__':
     app.run(debug=True)
